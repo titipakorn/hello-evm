@@ -136,21 +136,53 @@ function App() {
       </select>
     );
   };
-
   const LoadingSpinner = ({ isLoading, children }) => {
-    return (
-      <div className="relative">
-        {children}
+    const spinnerStyles = {
+      overlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(255, 255, 255, 0.8)",
+      },
+      spinner: {
+        width: "32px",
+        height: "32px",
+        border: "4px solid #f3f3f3",
+        borderTop: "4px solid #3498db",
+        borderRadius: "50%",
+        animation: "spin 1s linear infinite",
+      },
+      container: {
+        position: "relative",
+      },
+    };
 
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80">
-            <div className="w-8 h-8 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
-          </div>
-        )}
-      </div>
+    return (
+      <>
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+        <div style={spinnerStyles.container}>
+          {children}
+          {isLoading && (
+            <div style={spinnerStyles.overlay}>
+              <div style={spinnerStyles.spinner} />
+            </div>
+          )}
+        </div>
+      </>
     );
   };
-
   // Custom hook for Web3 and MetaMask
   const useWeb3 = () => {
     const [web3, setWeb3] = useState(null);
@@ -185,27 +217,28 @@ function App() {
       initWeb3();
     }, []);
 
-    return { web3, account, chainId, error };
+    return { web3, account, chainId, error, setAccount };
   };
 
   const [greeting, setGreeting] = useState("");
   const [greetingList, setGreetingList] = useState([]);
-  const { web3, account, chainId, error } = useWeb3();
+  const { web3, account, chainId, error, setAccount } = useWeb3();
   const [contract, setContract] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingContract, setContractLoading] = useState(false);
 
   function handleSubmit(event) {
     event.preventDefault();
     const name = event.target.elements.name.value;
     if (name !== "") {
       if (contract) {
-        setLoading(true);
+        setContractLoading(true);
         contract.methods
           .greet(name)
           .send({ from: account })
           .then((err, greeting_message) => {
             setGreeting(greeting_message);
-            setLoading(false);
+            setContractLoading(false);
           });
       }
     }
@@ -327,7 +360,7 @@ function App() {
       <img src="/logo2.svg" alt="DFINITY logo" />
       <br />
       <br />
-      <LoadingSpinner isLoading={loading}>
+      <LoadingSpinner isLoading={loadingContract}>
         <form action="#" onSubmit={handleSubmit}>
           <label htmlFor="name">Enter your name: &nbsp;</label>
           <input id="name" alt="Name" type="text" />
